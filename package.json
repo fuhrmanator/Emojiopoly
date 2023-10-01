@@ -18,10 +18,11 @@
     "build": "npm run build-pug && npm run build-sass",
     "build-pug": "pug --obj \"src/public/board_data.json\" src/public --out dist/public --pretty",
     "watch-pug": "pug --obj \"src/public/board_data.json\" src/public --out dist/public --pretty --watch",
-    "build-sass": "sass --scss --update src/public/sass:dist/public/css",
-    "watch-sass": "sass --scss --watch src/public/sass:dist/public/css",
+    "build-sass": "sass --update src/public/sass:dist/public/css",
+    "watch-sass": "sass --watch src/public/sass:dist/public/css",
     "build-webpack": "webpack",
     "watch-webpack": "webpack --watch",
+    "dev": "webpack serve --mode development",
     "test": "jest"
   },
   "repository": {
@@ -35,23 +36,28 @@
   },
   "homepage": "https://github.com/Chuzzy/Emojiopoly#readme",
   "dependencies": {
-    "express": "^4.16.2",
-    "jquery": "^3.2.1",
+    "express": "^4.18.2",
+    "jquery": "^3.7.1",
     "lodash": "^4.17.4",
-    "pug": "^2.0.0-rc.4",
-    "socket.io": "^2.0.4",
-    "sweetalert2": "^7.1.2"
+    "pug": "^3.0.2",
+    "socket.io": "^4.7.2",
+    "sweetalert2": "^11.7.31"
   },
   "devDependencies": {
-    "@types/express": "^4.0.39",
-    "@types/jest": "^22.0.0",
-    "@types/jquery": "^3.2.17",
-    "@types/lodash": "^4.14.90",
-    "@types/socket.io": "^1.4.31",
-    "jest-cli": "^22.0.5",
-    "ts-jest": "^22.0.0",
-    "ts-loader": "^3.2.0",
-    "typescript": "^2.6.2",
-    "webpack": "^3.10.0"
+    "@types/express": "^4.17.18",
+    "@types/jest": "^29.5.5",
+    "@types/jquery": "^3.5.20",
+    "@types/lodash": "^4.14.199",
+    "@types/socket.io": "^3.0.2",
+    "html-webpack-plugin": "^5.5.3",
+    "jest-cli": "^29.7.0",
+    "pug-cli": "^1.0.0-alpha6",
+    "sass": "^1.68.0",
+    "ts-jest": "^29.1.1",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.2.2",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
   }
 }

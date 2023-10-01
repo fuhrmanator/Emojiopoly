@@ -1,4 +1,4 @@
-import swal from "sweetalert2";
+import Swal from "sweetalert2";
 import * as $ from "jquery";
 
 /**
@@ -7,24 +7,24 @@ import * as $ from "jquery";
  */
 let publicFunctions = {
     manageProperties: () => {
-        swal("You have no properties to manage!");
+        Swal.fire("You have no properties to manage!");
     },
     showTradeWindow: () => {
-        swal("Cannot trade", "Trading is unavailable at this point.", "error");
+        Swal.fire("Cannot trade", "Trading is unavailable at this point.", "error");
     },
     confirmBankruptcy: () => {
-        swal({
+        Swal.fire({
             title: "💸",
             text: "Are you sure you want to file for bankruptcy?",
-            type: "warning",
+            icon: "warning",
             showCancelButton: true,
             reverseButtons: true,
             cancelButtonText: "No",
             confirmButtonColor: "#d33",
             confirmButtonText: "Yes"
-        }).then(result => {
+        }).then((result: any) => {
             if (result.value) {
-                swal("💸", "You are bankrupt.");
+                Swal.fire("💸", "You are bankrupt.");
             }
         });
     },
