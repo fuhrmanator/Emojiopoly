@@ -1,0 +1,94 @@
+name: TypeScript Analysis with Moose
+
+on:
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '22'
+    
+    - name: Install ts2famix
+      run: npm install -g ts2famix
+    
+    - name: Generate Famix model
+      run: |
+        if [ -f tsconfig.json ]; then
+          ts2famix -i tsconfig.json -o model.json
+        else
+          ts2famix -i "src/**/*.ts" -o model.json
+        fi
+    
+    - name: Install smalltalkCI (Moose image)
+      uses: hpi-swa/setup-smalltalkCI@v1
+      id: smalltalkci
+      with:
+        # Moose64-12 = Moose sur Pharo 12, compatible avec FamixTypeScript
+        # see https://github.com/hpi-swa/smalltalkCI?tab=readme-ov-file#images
+        smalltalk-image: Moose64-12
+
+    - name: Load FamixTypeScript metamodel and run some code in pharo to produce a report
+      run: |
+        # pharo commands are in a .ston file 
+        smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} ci/moose-analysis.ston
+      shell: bash
+      timeout-minutes: 20
+
+    
+    - name: Load Moose and analyze model
+      run: |
+        cat > analyze.st << 'EOF'
+        | model classes functions methods |
+        model := FamixTypeScriptModel new.
+        model importFromJSONFile: 'model.json'.
+        classes := model allWithType: FamixTypeScriptClass.
+        functions := model allWithType: FamixTypeScriptFunction.
+        methods := model allWithType: FamixTypeScriptMethod.
+        
+        FileStream stdout
+          nextPutAll: 'Analysis Report'; cr;
+          nextPutAll: '==============='; cr;
+          nextPutAll: 'Classes: ', classes size asString; cr;
+          nextPutAll: 'Functions: ', functions size asString; cr;
+          nextPutAll: 'Methods: ', methods size asString; cr.
+        EOF
+        pharo Pharo.image --load Moose eval "$(cat analyze.st)"
+    
+    - name: Generate markdown report
+      run: |
+        cat > ANALYSIS_REPORT.md << 'EOF'
+        # TypeScript Project Analysis Report
+        
+        Generated: $(date)
+        
+        ## Statistics
+        
+        - **Classes**: $(pharo query classes)
+        - **Functions**: $(pharo query functions)
+        - **Methods**: $(pharo query methods)
+        EOF
+    
+    - name: Upload analysis report
+      uses: actions/upload-artifact@v3
+      with:
+        name: analysis-report
+        path: ANALYSIS_REPORT.md
+    
+    - name: Commit report
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add ANALYSIS_REPORT.md model.json
+        git commit -m "chore: update analysis report" || true
+        git push
