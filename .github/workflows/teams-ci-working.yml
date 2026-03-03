@@ -1,0 +1,193 @@
+# =============================================================================
+# Pipeline CI — Analyse Pharo/Moose d'un projet TypeScript
+# =============================================================================
+# Ce pipeline s'exécute automatiquement à chaque push sur main/master.
+# Il effectue les étapes suivantes :
+#   1. Exécuter les tests Jest
+#   2. Générer un modèle Famix (JSON) avec ts2famix
+#   3. Charger le modèle dans Pharo/Moose et exporter les métriques en CSV
+#   4. Sauvegarder les résultats (artifacts + branche ci-results)
+# =============================================================================
+
+name: CI - Analyse Pharo/Moose
+
+# Déclenchement : à chaque push ou pull request sur main/master
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Permission d'écriture nécessaire pour pousser sur la branche ci-results
+    permissions:
+      contents: write
+
+    steps:
+      # ================================================================
+      # ÉTAPE 1 : Récupérer le code source
+      # ================================================================
+      # actions/checkout clone le repo dans le runner CI.
+      # fetch-depth: 0 récupère tout l'historique (nécessaire pour
+      # créer/pousser la branche ci-results plus tard).
+      # ================================================================
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      # ================================================================
+      # ÉTAPE 2 : Installer les dépendances et exécuter les tests
+      # ================================================================
+      # On installe Node.js et les dépendances npm, puis on lance les
+      # tests Jest. Si les tests échouent, le pipeline s'arrête ici.
+      # ================================================================
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer les dépendances npm
+        run: npm ci
+
+      - name: Exécuter les tests Jest
+        run: npm test
+
+      # ================================================================
+      # ÉTAPE 3 : Générer le modèle Famix avec ts2famix
+      # ================================================================
+      # ts2famix est un outil npm qui analyse le code TypeScript et
+      # produit un fichier JSON au format Famix. Ce JSON décrit la
+      # structure du projet : classes, méthodes, attributs, relations.
+      #
+      # Entrée  : tsconfig.json (pointe vers les fichiers source)
+      # Sortie  : model.json (modèle Famix du projet)
+      # ================================================================
+      - name: Installer ts2famix
+        run: npm install -g ts2famix
+
+      - name: Générer le modèle Famix (JSON)
+        run: |
+          ts2famix -i tsconfig.json -o model.json
+          echo "Modèle généré : $(wc -c < model.json) octets"
+          # Vérification rapide que le JSON est valide
+          python3 -c "import json; json.load(open('model.json')); print('JSON valide')"
+
+      # ================================================================
+      # ÉTAPE 4 : Charger le modèle dans Pharo/Moose et exporter le CSV
+      # ================================================================
+      # Cette étape utilise smalltalkCI pour :
+      #   a) Télécharger une image Moose (Pharo + outils d'analyse)
+      #   b) Charger le métamodèle FamixTypeScript via Metacello
+      #      (configuré dans ci/moose-config.ston)
+      #   c) Exécuter le script ci/pharo-metrics-export.st qui :
+      #      - Lit le model.json généré à l'étape précédente
+      #      - Extrait NOM, NOA, LOC pour chaque classe
+      #      - Écrit export_metrics.csv
+      #
+      # Note : cette étape prend environ 6-7 minutes (téléchargement
+      # de l'image Moose + chargement du métamodèle depuis GitHub).
+      #
+      # Entrée  : model.json + fichiers source TypeScript
+      # Sortie  : export_metrics.csv
+      # ================================================================
+      - name: Installer smalltalkCI (image Moose)
+        uses: hpi-swa/setup-smalltalkCI@v1
+        id: smalltalkci
+        with:
+          # Moose64-12 = Moose sur Pharo 12, compatible avec FamixTypeScript
+          smalltalk-image: Moose64-12
+
+      - name: Charger FamixTypeScript et exporter les métriques CSV
+        run: |
+          # On passe le chemin du fichier .ston car il n'est pas à la racine
+          # (par défaut, smalltalkci cherche .smalltalk.ston à la racine)
+          smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} ci/moose-config.ston
+        shell: bash
+        timeout-minutes: 20
+
+      # ================================================================
+      # ÉTAPE 5 : Vérifier que le CSV a bien été généré
+      # ================================================================
+      - name: Vérifier le CSV exporté
+        run: |
+          if [ -f export_metrics.csv ]; then
+            echo "Export CSV réussi !"
+            echo "--- Contenu ---"
+            cat export_metrics.csv
+            echo ""
+            echo "Nombre de lignes : $(wc -l < export_metrics.csv)"
+          else
+            echo "ERREUR : export_metrics.csv non trouvé !"
+            find . -name "*.csv" -type f 2>/dev/null
+            exit 1
+          fi
+
+      # ================================================================
+      # ÉTAPE 6 : Sauvegarder les résultats comme artifacts
+      # ================================================================
+      # Les artifacts sont téléchargeables dans l'onglet Actions de GitHub,
+      # dans le détail du run → section "Artifacts".
+      # Ils sont conservés 30 jours.
+      # ================================================================
+      - name: Sauvegarder les résultats (artifacts)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultats-analyse
+          path: |
+            model.json
+            export_metrics.csv
+          retention-days: 30
+
+      # ================================================================
+      # ÉTAPE 7 : Pousser les résultats sur la branche ci-results
+      # ================================================================
+      # Les résultats sont aussi commités sur une branche orpheline
+      # "ci-results" pour un accès permanent (les artifacts expirent).
+      # Cette branche ne contient que les fichiers générés, pas le code.
+      # Le [skip ci] dans le message de commit empêche le pipeline de
+      # se relancer en boucle.
+      # ================================================================
+      - name: Pousser les résultats sur la branche ci-results
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Sauvegarder les fichiers générés dans un dossier temporaire
+          mkdir -p /tmp/ci-output
+          cp model.json /tmp/ci-output/
+          cp export_metrics.csv /tmp/ci-output/
+          
+          # Basculer sur la branche ci-results (la créer si elle n'existe pas)
+          git fetch origin ci-results || true
+          if git rev-parse --verify origin/ci-results >/dev/null 2>&1; then
+            git checkout ci-results
+          else
+            # Branche orpheline = pas de parent, historique indépendant de main
+            git checkout --orphan ci-results
+            git rm -rf . 2>/dev/null || true
+          fi
+          
+          # Copier les résultats dans le dossier generated/
+          rm -rf generated
+          mkdir -p generated
+          cp /tmp/ci-output/model.json generated/
+          cp /tmp/ci-output/export_metrics.csv generated/
+          
+          git add generated/
+          
+          # Ne commiter que s'il y a des changements
+          if git diff --cached --quiet; then
+            echo "Pas de changement à commiter"
+          else
+            COMMIT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+            git commit -m "ci: mise à jour des résultats depuis ${COMMIT_SHA} [skip ci]"
+            git push origin ci-results
+          fi

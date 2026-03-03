@@ -30,54 +30,50 @@ jobs:
           ts2famix -i "src/**/*.ts" -o model.json
         fi
     
-    - name: Install smalltalkCI (Moose image)
+    - name: Installer smalltalkCI (image Moose)
       uses: hpi-swa/setup-smalltalkCI@v1
       id: smalltalkci
       with:
         # Moose64-12 = Moose sur Pharo 12, compatible avec FamixTypeScript
-        # see https://github.com/hpi-swa/smalltalkCI?tab=readme-ov-file#images
         smalltalk-image: Moose64-12
 
-    - name: Load FamixTypeScript metamodel and run some code in pharo to produce a report
+    - name: Charger FamixTypeScript et exporter les métriques CSV
       run: |
-        # pharo commands are in a .ston file 
-        smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} ci/moose-analysis.ston
+        # On passe le chemin du fichier .ston car il n'est pas à la racine
+        # (par défaut, smalltalkci cherche .smalltalk.ston à la racine)
+        smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} .github/moose-analysis.ston
       shell: bash
       timeout-minutes: 20
-
     
     - name: Load Moose and analyze model
       run: |
         cat > analyze.st << 'EOF'
         | model classes functions methods |
-        model := FamixTypeScriptModel new.
-        model importFromJSONFile: 'model.json'.
+        'model.json' asFileReference readStreamDo:
+          [ :stream | model := FamixTypeScriptModel new
+            importFromJSONStream: stream. model install ].
+
         classes := model allWithType: FamixTypeScriptClass.
         functions := model allWithType: FamixTypeScriptFunction.
         methods := model allWithType: FamixTypeScriptMethod.
         
-        FileStream stdout
+        | model classes functions methods |
+        'model.json' asFileReference readStreamDo:
+          [ :stream | model := FamixTypeScriptModel new
+            importFromJSONStream: stream. model install ].
+
+        classes := model allWithType: FamixTypeScriptClass.
+        functions := model allWithType: FamixTypeScriptFunction.
+        methods := model allWithType: FamixTypeScriptMethod.
+        
+        Stdio stdout
           nextPutAll: 'Analysis Report'; cr;
           nextPutAll: '==============='; cr;
           nextPutAll: 'Classes: ', classes size asString; cr;
           nextPutAll: 'Functions: ', functions size asString; cr;
           nextPutAll: 'Methods: ', methods size asString; cr.
         EOF
-        pharo Pharo.image --load Moose eval "$(cat analyze.st)"
-    
-    - name: Generate markdown report
-      run: |
-        cat > ANALYSIS_REPORT.md << 'EOF'
-        # TypeScript Project Analysis Report
-        
-        Generated: $(date)
-        
-        ## Statistics
-        
-        - **Classes**: $(pharo query classes)
-        - **Functions**: $(pharo query functions)
-        - **Methods**: $(pharo query methods)
-        EOF
+        pharo Pharo.image --load Moose eval "$(cat analyze.st)" > ANALYSIS_REPORT.md
     
     - name: Upload analysis report
       uses: actions/upload-artifact@v3
