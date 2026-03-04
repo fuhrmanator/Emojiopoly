@@ -1,1 +1,1 @@
-There are 5 classesDebt, methods: 3, attributes: 5, lines of code: 0MonopolyGame, methods: 14, attributes: 15, lines of code: 0Player, methods: 1, attributes: 5, lines of code: 0Square, methods: 3, attributes: 2, lines of code: 0Property, methods: 1, attributes: 8, lines of code: 0
+There are 5 classes  | Class | Methods | Attributes | Lines of Code ||-------|---------|------------|---------------|| Debt | 3 | 5 | 0 || Player | 1 | 5 | 0 || Property | 1 | 8 | 0 || Square | 3 | 2 | 0 || MonopolyGame | 14 | 15 | 0 |
