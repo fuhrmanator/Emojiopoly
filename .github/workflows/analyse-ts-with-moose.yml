@@ -10,81 +10,36 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Permission d'écriture nécessaire pour pousser sur la branche ci-results
+    permissions:
+      contents: write
     
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '22'
-    
-    - name: Install ts2famix
-      run: npm install -g ts2famix
-    
-    - name: Generate Famix model
-      run: |
-        if [ -f tsconfig.json ]; then
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      # Facultatif - ne pas faire pour Emojiopoly - il n'y a pas de tests
+      # - name: Installer les dépendances npm
+      #   run: npm ci
+
+      # - name: Exécuter les tests Jest
+      #   run: npm test
+
+      - name: Installer ts2famix
+        run: npm install -g ts2famix
+
+      - name: Générer le modèle Famix (JSON)
+        run: |
           ts2famix -i tsconfig.json -o model.json
-        else
-          ts2famix -i "src/**/*.ts" -o model.json
-        fi
-    
-    - name: Installer smalltalkCI (image Moose)
-      uses: hpi-swa/setup-smalltalkCI@v1
-      id: smalltalkci
-      with:
-        # Moose64-12 = Moose sur Pharo 12, compatible avec FamixTypeScript
-        smalltalk-image: Moose64-12
-
-    - name: Charger FamixTypeScript et exporter les métriques CSV
-      run: |
-        # On passe le chemin du fichier .ston car il n'est pas à la racine
-        # (par défaut, smalltalkci cherche .smalltalk.ston à la racine)
-        smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} .github/moose-analysis.ston
-      shell: bash
-      timeout-minutes: 20
-    
-    - name: Load Moose and analyze model
-      run: |
-        cat > analyze.st << 'EOF'
-        | model classes functions methods |
-        'model.json' asFileReference readStreamDo:
-          [ :stream | model := FamixTypeScriptModel new
-            importFromJSONStream: stream. model install ].
-
-        classes := model allWithType: FamixTypeScriptClass.
-        functions := model allWithType: FamixTypeScriptFunction.
-        methods := model allWithType: FamixTypeScriptMethod.
-        
-        | model classes functions methods |
-        'model.json' asFileReference readStreamDo:
-          [ :stream | model := FamixTypeScriptModel new
-            importFromJSONStream: stream. model install ].
-
-        classes := model allWithType: FamixTypeScriptClass.
-        functions := model allWithType: FamixTypeScriptFunction.
-        methods := model allWithType: FamixTypeScriptMethod.
-        
-        Stdio stdout
-          nextPutAll: 'Analysis Report'; cr;
-          nextPutAll: '==============='; cr;
-          nextPutAll: 'Classes: ', classes size asString; cr;
-          nextPutAll: 'Functions: ', functions size asString; cr;
-          nextPutAll: 'Methods: ', methods size asString; cr.
-        EOF
-        pharo Pharo.image --load Moose eval "$(cat analyze.st)" > ANALYSIS_REPORT.md
-    
-    - name: Upload analysis report
-      uses: actions/upload-artifact@v3
-      with:
-        name: analysis-report
-        path: ANALYSIS_REPORT.md
-    
-    - name: Commit report
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git add ANALYSIS_REPORT.md model.json
-        git commit -m "chore: update analysis report" || true
-        git push
+          echo "Modèle généré : $(wc -c < model.json) octets"
+          # Vérification rapide que le JSON est valide
+          python3 -c "import json; json.load(open('model.json')); print('JSON valide')"
