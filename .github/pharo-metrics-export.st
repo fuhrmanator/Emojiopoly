@@ -45,43 +45,19 @@ Transcript show: 'Classes found: ', classes size printString; cr.
 "Ouverture du fichier .md en écriture."
 stream := './export_metrics.md' asFileReference writeStream.
 
-"Pour chaque classe, on calcule le nombre de lignes de code (LOC)."
-"La stratégie de calcul du LOC :"
-"  - Priorité : lire le fichier source via le sourceAnchor de la classe"
-"    (positions startPos à endPos) et compter les lignes."
-"  - Fallback : si le fichier source n'est pas trouvé, sommer les LOC"
-"    de toutes les méthodes de la classe."
 stream nextPutAll: 'There are '; nextPutAll: classes size asString; nextPutAll: ' classes'; cr.
 
 classes do: [ :each |
-    | loc anchor srcFile content snippet |
-    loc := 0.
-
-    "Tentative de calcul via le sourceAnchor (méthode principale)"
-    anchor := each sourceAnchor.
-    (anchor notNil and: [ anchor isKindOf: FamixTypeScriptIndexedFileAnchor ]) ifTrue: [
-        srcFile := anchor fileName asFileReference.
-        srcFile exists ifTrue: [
-            content := srcFile contents.
-            snippet := content copyFrom: anchor startPos to: (anchor endPos min: content size).
-            loc := snippet lineCount.
-        ].
-    ].
-
-    "Fallback : somme des LOC des méthodes"
-    loc = 0 ifTrue: [
-        loc := each methods inject: 0 into: [ :sum :m | sum + (m numberOfLinesOfCode ifNil: [ 0 ]) ].
-    ].
-
-    Transcript show: '  ', each name, ' loc:', loc printString; cr.
-    writer nextPut: {
-        each name.
-        each numberOfMethods.
-        each numberOfAttributes.
-        loc.
+    stream nextPutAll: each name;
+        nextPutAll: ', methods: '; 
+        nextPutAll: each numberOfMethods asString;
+        nextPutAll: ', attributes: '; 
+        nextPutAll: each numberOfAttributes;
+        nextPutAll: ', lines of code: '; 
+        nextPutAll: each numberOfLinesOfCode; cr.
     }.
 ].
 
 stream close.
 
-Transcript show: 'Export complete - export_metrics.csv'; cr.
+Transcript show: 'Export complete - export_metrics.md'; cr.

@@ -43,3 +43,19 @@ jobs:
           echo "Modèle généré : $(wc -c < model.json) octets"
           # Vérification rapide que le JSON est valide
           python3 -c "import json; json.load(open('model.json')); print('JSON valide')"
+
+      # Install Pharo/Moose
+      - name: Installer smalltalkCI (image Moose)
+        uses: hpi-swa/setup-smalltalkCI@v1
+        id: smalltalkci
+        with:
+          # Moose64-12 = Moose sur Pharo 12, compatible avec FamixTypeScript
+          smalltalk-image: Moose64-12
+
+      # Load FamixTypeScript metamodel and run analysis
+      - name: Charger FamixTypeScript et exporter les métriques CSV
+        run: |
+          # the .ston file loads the metamodel and runs a script to do analysis (see .ston file fore more info)
+          smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} .github/moose-analysis.ston
+        shell: bash
+        timeout-minutes: 20
