@@ -2,7 +2,7 @@
 "Script Pharo - Export des métriques"
 "  il vaut mieux tester ce script dans un Playground si vous le modifiez"
 "============================================================"
-| modelFile model classes stream writer |
+| modelFile model classes stream writer srcDir |
 
 "--- 1. Localiser le fichier model.json ---"
 "On cherche d'abord dans le répertoire courant,"
@@ -47,8 +47,6 @@ Transcript show: 'Classes found: ', classes size printString; cr.
 stream := './export_metrics.md' asFileReference writeStream.
 
 stream nextPutAll: 'Current working directory: '; nextPutAll: FileSystem workingDirectory pathString; cr; cr.
-
-| srcDir |
 
 srcDir := './src' asFileReference.
 
