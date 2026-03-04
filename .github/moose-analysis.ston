@@ -10,7 +10,7 @@ SmalltalkCISpec {
   ],
   #testing : {
     #exclude : {
-      #packages : [ 'FamixTypeScript*' ]
+      #packages : [ 'Famix-TypeScript-Tests' ]
     },
     #failOnZeroTests : false
   },
