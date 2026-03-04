@@ -1,5 +1,6 @@
 "============================================================"
-"Script Pharo - Export des métriques de qualité en CSV"
+"Script Pharo - Export des métriques"
+"  il vaut mieux tester ce script dans un Playground si vous le modifiez"
 "============================================================"
 | modelFile model classes stream writer |
 
@@ -52,10 +53,9 @@ classes do: [ :each |
         nextPutAll: ', methods: '; 
         nextPutAll: each numberOfMethods asString;
         nextPutAll: ', attributes: '; 
-        nextPutAll: each numberOfAttributes;
+        nextPutAll: each numberOfAttributes asString;
         nextPutAll: ', lines of code: '; 
-        nextPutAll: each numberOfLinesOfCode; cr.
-    }.
+        nextPutAll: each numberOfLinesOfCode asString; cr.
 ].
 
 stream close.
