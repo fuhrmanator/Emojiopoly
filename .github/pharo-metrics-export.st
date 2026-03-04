@@ -65,10 +65,14 @@ srcDir exists ifTrue: [
 stream nextPutAll: 'There are '; nextPutAll: classes size asString; nextPutAll: ' classes  '; cr; cr.
 
 "Produce a markdown table."
-stream nextPutAll: '| Class | Methods | Attributes | Lines of Code |'; cr.
-stream nextPutAll: '|-------|---------|------------|---------------|'; cr.
+stream nextPutAll: '| Class | Methods | Attributes | Lines of Code | Source Text |'; cr.
+stream nextPutAll: '|-------|---------|------------|---------------|------------|'; cr.
 classes do: [ :each |
-    stream nextPutAll: '| '; nextPutAll: each name; nextPutAll: ' | '; nextPutAll: each numberOfMethods asString; nextPutAll: ' | '; nextPutAll: each numberOfAttributes asString; nextPutAll: ' | '; nextPutAll: each numberOfLinesOfCode asString; nextPutAll: ' |'; cr.
+    stream nextPutAll: '| '; nextPutAll: each name; nextPutAll: ' | ';
+    nextPutAll: each numberOfMethods asString; nextPutAll: ' | ';
+    nextPutAll: each numberOfAttributes asString; nextPutAll: ' | ';
+    nextPutAll: each numberOfLinesOfCode asString; nextPutAll: ' |';
+    nextPutAll: each sourceText; nextPutAll: ' |'; cr.
 ].
 
 stream close.
