@@ -34,7 +34,7 @@ modelFile exists ifFalse: [
 Transcript show: 'Loading model into Moose...'; cr.
 modelFile readStreamDo: [ :readStream |
     model := FamixTypeScriptModel new importFromJSONStream: readStream.
-    model install.
+    model rootFolder: './'.
 ].
 Transcript show: 'Model loaded.'; cr.
 
