@@ -59,3 +59,12 @@ jobs:
           smalltalkci -s ${{ steps.smalltalkci.outputs.smalltalk-image }} .github/moose-analysis.ston
         shell: bash
         timeout-minutes: 20
+
+      - name: Push metrics to ci-metrics branch
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout -b ci-metrics || git checkout ci-metrics
+          git add export_metrics.md
+          git commit -m "Update metrics from TypeScript analysis" || echo "No changes to commit"
+          git push origin ci-metrics
