@@ -46,16 +46,13 @@ Transcript show: 'Classes found: ', classes size printString; cr.
 "Ouverture du fichier .md en écriture."
 stream := './export_metrics.md' asFileReference writeStream.
 
-stream nextPutAll: 'There are '; nextPutAll: classes size asString; nextPutAll: ' classes'; cr.
+stream nextPutAll: 'There are '; nextPutAll: classes size asString; nextPutAll: ' classes  '; cr; cr.
 
+"Produce a markdown table."
+stream nextPutAll: '| Class | Methods | Attributes | Lines of Code |'; cr.
+stream nextPutAll: '|-------|---------|------------|---------------|'; cr.
 classes do: [ :each |
-    stream nextPutAll: each name;
-        nextPutAll: ', methods: '; 
-        nextPutAll: each numberOfMethods asString;
-        nextPutAll: ', attributes: '; 
-        nextPutAll: each numberOfAttributes asString;
-        nextPutAll: ', lines of code: '; 
-        nextPutAll: each numberOfLinesOfCode asString; cr.
+    stream nextPutAll: '| '; nextPutAll: each name; nextPutAll: ' | '; nextPutAll: each numberOfMethods asString; nextPutAll: ' | '; nextPutAll: each numberOfAttributes asString; nextPutAll: ' | '; nextPutAll: each numberOfLinesOfCode asString; nextPutAll: ' |'; cr.
 ].
 
 stream close.
