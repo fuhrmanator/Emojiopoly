@@ -13,10 +13,11 @@ name: CI - Analyse Pharo/Moose
 
 # Déclenchement : à chaque push ou pull request sur main/master
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  # push:
+  #   branches: [ main, master ]
+  # pull_request:
+  #   branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   analyse:
