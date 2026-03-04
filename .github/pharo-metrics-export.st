@@ -46,6 +46,24 @@ Transcript show: 'Classes found: ', classes size printString; cr.
 "Ouverture du fichier .md en écriture."
 stream := './export_metrics.md' asFileReference writeStream.
 
+stream nextPutAll: 'Current working directory: '; nextPutAll: FileSystem workingDirectory pathString; cr; cr.
+
+| srcDir |
+
+srcDir := './src' asFileReference.
+
+srcDir exists ifTrue: [
+    stream nextPutAll: 'Files in src/ directory:'; cr.
+    srcDir entries do: [ :entry |
+        entry isFile ifTrue: [
+            stream nextPutAll: '- '; nextPutAll: entry name; cr.
+        ].
+    ].
+    stream cr.
+] ifFalse: [
+    stream nextPutAll: 'src/ directory not found'; cr; cr.
+].
+
 stream nextPutAll: 'There are '; nextPutAll: classes size asString; nextPutAll: ' classes  '; cr; cr.
 
 "Produce a markdown table."
