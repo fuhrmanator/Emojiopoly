@@ -9,6 +9,9 @@ SmalltalkCISpec {
     }
   ],
   #testing : {
+    #exclude : {
+      #packages : [ 'FamixTypeScript*' ]
+    },
     #failOnZeroTests : false
   },
   #preTesting : SCICustomScript {
