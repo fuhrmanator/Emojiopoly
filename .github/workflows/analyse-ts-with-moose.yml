@@ -66,7 +66,9 @@ jobs:
           git fetch origin
           # Temporarily move the metrics file to avoid checkout conflicts
           cp export_metrics.md /tmp/export_metrics.md
+          cp model.json /tmp/model.json
           rm export_metrics.md
+          rm model.json
           # Configure git for commits
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -74,8 +76,9 @@ jobs:
           git checkout -b ci-metrics origin/ci-metrics 2>/dev/null || git checkout -b ci-metrics
           # Restore the metrics file to the branch
           cp /tmp/export_metrics.md export_metrics.md
+          cp /tmp/model.json model.json
           # Stage and commit the metrics file
-          git add export_metrics.md
+          git add export_metrics.md model.json
           git commit -m "Update metrics from TypeScript analysis" || echo "No changes to commit"
           # Push the branch (creates it remotely if new)
           git push origin ci-metrics
