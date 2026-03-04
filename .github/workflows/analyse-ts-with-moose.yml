@@ -62,9 +62,10 @@ jobs:
 
       - name: Push metrics to ci-metrics branch
         run: |
+          git fetch origin
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git checkout -b ci-metrics || git checkout ci-metrics
+          git checkout -b ci-metrics origin/ci-metrics || git checkout -b ci-metrics
           git add export_metrics.md
           git commit -m "Update metrics from TypeScript analysis" || echo "No changes to commit"
           git push origin ci-metrics
