@@ -62,10 +62,20 @@ jobs:
 
       - name: Push metrics to ci-metrics branch
         run: |
+          # Fetch remote branches to ensure we have the latest info
           git fetch origin
+          # Temporarily move the metrics file to avoid checkout conflicts
+          cp export_metrics.md /tmp/export_metrics.md
+          rm export_metrics.md
+          # Configure git for commits
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git checkout -b ci-metrics origin/ci-metrics || git checkout -b ci-metrics
+          # Checkout ci-metrics branch: try from remote if exists, otherwise create new
+          git checkout -b ci-metrics origin/ci-metrics 2>/dev/null || git checkout -b ci-metrics
+          # Restore the metrics file to the branch
+          cp /tmp/export_metrics.md export_metrics.md
+          # Stage and commit the metrics file
           git add export_metrics.md
           git commit -m "Update metrics from TypeScript analysis" || echo "No changes to commit"
+          # Push the branch (creates it remotely if new)
           git push origin ci-metrics
