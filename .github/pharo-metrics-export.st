@@ -29,11 +29,12 @@ modelFile exists ifFalse: [
 
 "--- 2. Charger le modèle JSON dans Moose ---"
 "FamixTypeScriptModel est la classe du métamodèle chargée à l'étape"
-"précédente par Metacello (via moose-config.ston)."
+"précédente par Metacello (via .ston)."
 "importFromJSONStream: lit le JSON et crée les entités Famix en mémoire."
 Transcript show: 'Loading model into Moose...'; cr.
 modelFile readStreamDo: [ :readStream |
     model := FamixTypeScriptModel new importFromJSONStream: readStream.
+    "To find the source code of the model"
     model rootFolder: './'.
 ].
 Transcript show: 'Model loaded.'; cr.
@@ -65,14 +66,14 @@ srcDir exists ifTrue: [
 stream nextPutAll: 'There are '; nextPutAll: classes size asString; nextPutAll: ' classes  '; cr; cr.
 
 "Produce a markdown table."
-stream nextPutAll: '| Class | Methods | Attributes | Lines of Code | Source Text |'; cr.
-stream nextPutAll: '|-------|---------|------------|---------------|------------|'; cr.
+stream nextPutAll: '| Class | Methods | Attributes | Lines of Code |'; cr.
+stream nextPutAll: '|-------|---------|------------|---------------|'; cr.
 classes do: [ :each |
     stream nextPutAll: '| '; nextPutAll: each name; nextPutAll: ' | ';
-    nextPutAll: each numberOfMethods asString; nextPutAll: ' | ';
-    nextPutAll: each numberOfAttributes asString; nextPutAll: ' | ';
-    nextPutAll: each numberOfLinesOfCode asString; nextPutAll: ' |';
-    nextPutAll: each sourceText; nextPutAll: ' |'; cr.
+        nextPutAll: each numberOfMethods asString; nextPutAll: ' | ';
+        nextPutAll: each numberOfAttributes asString; nextPutAll: ' | ';
+        nextPutAll: each numberOfLinesOfCode asString; nextPutAll: ' |';
+        cr.
 ].
 
 stream close.

@@ -39,7 +39,8 @@ jobs:
 
       - name: Générer le modèle Famix (JSON)
         run: |
-          ts2famix -i tsconfig.json -o model.json
+          # -l 4 is log warnings only
+          ts2famix -l 4 -i tsconfig.json -o model.json
           echo "Modèle généré : $(wc -c < model.json) octets"
           # Vérification rapide que le JSON est valide
           python3 -c "import json; json.load(open('model.json')); print('JSON valide')"
